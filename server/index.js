@@ -9,10 +9,122 @@ const schema = buildSchema(`
   type Pokemon {
     id: String
     name: String!
+    classification: String
+    types: [String]
+    resistant: [String]
+    weaknesses: [String]
+    weight: Weight
+    height: Height
+    fleeRate: Float
+    evolutionRequirements: EvolutionRequirements
+    evolutions: Evolutions
+    maxCP: Int 
+    maxHP: Int
+    attacks: Attacks
   }
+
+  type Attacks {
+    fast: [Fast]
+    special: [Special]
+  }
+
+  input AttacksInput {
+    fast: [FastInput]
+    special: [SpecialInput]
+  }
+  input SpecialInput {
+    name: String
+    type: String
+    damage: Int
+  }
+
+  input FastInput {
+    name: String
+    type: String
+    damage: Int
+  }
+  
+  type Fast {
+    name: String
+    type: String
+    damage: Int
+  }
+  type Special {
+    name: String
+    type: String
+    damage: Int
+  }
+
+  type Weight {
+    minimum: String
+    maximum: String
+  }
+
+  input HeightInput {
+    minimum: String
+    maximum: String
+  }
+
+  type Height {
+    minimum: String
+    maximum: String
+  }
+
+  input WeightInput {
+    minimum: String
+    maximum: String
+  }
+  
+  type EvolutionRequirements {
+    amount: Int
+    name: String
+  }
+
+  input EvolutionRequirementsInput {
+    amount: Int
+    name: String
+  }
+
+  type Evolutions {
+    id: Int
+    name: String
+  }
+
+  input EvolutionsInput {
+    id: Int
+    name: String
+  }
+
+  input PokemonInput {
+    id: String
+    name: String!
+    classification: String
+    types: [String]
+    resistant: [String]
+    weaknesses: [String]
+    weight: WeightInput
+    height: HeightInput
+    fleeRate: Float
+    evolutionRequirements: EvolutionRequirementsInput
+    evolutions: EvolutionsInput
+    maxCP: Int 
+    maxHP: Int
+    attacks: AttacksInput
+  }
+
   type Query {
     Pokemons: [Pokemon]
-    Pokemon(name: String!): Pokemon
+    Pokemon(name: String, id: String): Pokemon
+    Attacks: Attacks
+    Attack(type: String): [Pokemon]
+    Types: [String]
+    Type(name: String): [Pokemon]
+  }
+
+  type Mutation {
+    createPokemon(input: PokemonInput): Pokemon
+    modifyPokemon(name: String, input: PokemonInput): Pokemon
+    removePokemon(name: String, id: String): Pokemon
   }
 `);
 
@@ -22,7 +134,55 @@ const root = {
     return data.pokemon;
   },
   Pokemon: (request) => {
-    return data.pokemon.find((pokemon) => pokemon.name === request.name);
+    return data.pokemon.find(
+      (pokemon) => pokemon.name === request.name || pokemon.id === request.id
+    );
+  },
+  Attack: (request) => {
+    const result = [];
+    data.pokemon.forEach((pokemon) => {
+      for (let atk in pokemon.attacks) {
+        for (let fast of pokemon.attacks[atk]) {
+          if (fast.name === request.type) {
+            result.push(pokemon);
+          }
+        }
+      }
+    });
+    return result;
+  },
+  Types: () => {
+    return data.types;
+  },
+  Type: (request) => {
+    return data.pokemon.filter((pokemon) =>
+      pokemon.types.includes(request.name)
+    );
+  },
+  Attacks: () => {
+    return data.attacks;
+  },
+  createPokemon: (request) => {
+    const newPokemon = request.input;
+    data.pokemon.push(newPokemon);
+    return newPokemon;
+  },
+  modifyPokemon: (request) => {
+    const targetPokemon = data.pokemon.find(
+      (pokemon) => pokemon.name === request.name
+    );
+    Object.assign(targetPokemon, request.input);
+    return targetPokemon;
+  },
+  removePokemon: (request) => {
+    for (let i = 0; i < data.pokemon.length; i++) {
+      if (
+        request.name === data.pokemon[i].name ||
+        request.id === data.pokemon[i].id
+      ) {
+        data.pokemon.splice(i, 1);
+      }
+    }
   },
 };
 
