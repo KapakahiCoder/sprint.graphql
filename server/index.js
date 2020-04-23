@@ -32,6 +32,7 @@ const schema = buildSchema(`
     fast: [FastInput]
     special: [SpecialInput]
   }
+
   input SpecialInput {
     name: String
     type: String
@@ -49,6 +50,7 @@ const schema = buildSchema(`
     type: String
     damage: Int
   }
+  
   type Special {
     name: String
     type: String
@@ -112,6 +114,10 @@ const schema = buildSchema(`
     attacks: AttacksInput
   }
 
+ input TypeInput {
+   type: String
+ }
+
   type Query {
     Pokemons: [Pokemon]
     Pokemon(name: String, id: String): Pokemon
@@ -125,6 +131,12 @@ const schema = buildSchema(`
     createPokemon(input: PokemonInput): Pokemon
     modifyPokemon(name: String, input: PokemonInput): Pokemon
     removePokemon(name: String, id: String): Pokemon
+    createType(type: String): [String]
+    deleteType(type: String): [String]
+    modifyType(type: String, input: String): [String]
+    createAttack(type: String): Attacks
+    deleteAttack(type: String): Attacks
+    modifyAttack(type: String, input: String): Attacks
   }
 `);
 
@@ -183,6 +195,27 @@ const root = {
         data.pokemon.splice(i, 1);
       }
     }
+  },
+  createType: (request) => {
+    data.types.push(request.type);
+    return data.types;
+  },
+  deleteType: (request) => {
+    for (let i = 0; i < data.types.length; i++) {
+      if (request.type === data.types[i]) {
+        data.types.splice(i, 1);
+      }
+    }
+    return data.types;
+  },
+
+  modifyType: (request) => {
+    for (let i = 0; i < data.types.length; i++) {
+      if (data.types[i] === request.type) {
+        data.types[i] = request.input;
+      }
+    }
+    return data.types;
   },
 };
 
