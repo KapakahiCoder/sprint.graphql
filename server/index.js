@@ -118,6 +118,23 @@ const schema = buildSchema(`
    type: String
  }
 
+ input AttackInput {
+   fast: FastInput
+   special: SpecialInput
+ }
+
+ input SpecialInput {
+   name: String
+   type: String
+   damage: Int
+ }
+
+ input FastInput {
+   name: String
+   type: String
+   damage: Int
+ }
+
   type Query {
     Pokemons: [Pokemon]
     Pokemon(name: String, id: String): Pokemon
@@ -134,9 +151,9 @@ const schema = buildSchema(`
     createType(type: String): [String]
     deleteType(type: String): [String]
     modifyType(type: String, input: String): [String]
-    createAttack(type: String): Attacks
-    deleteAttack(type: String): Attacks
-    modifyAttack(type: String, input: String): Attacks
+    createAttack(input: AttacksInput): Attacks
+    deleteAttack(name: String): Attacks
+    modifyAttack(name: String, input: FastInput, input: SpecialInput): Attacks
   }
 `);
 
@@ -216,6 +233,37 @@ const root = {
       }
     }
     return data.types;
+  },
+
+  createAttack: (request) => {
+    const attackType = Object.keys(request.input)[0];
+    for (const attack of data.attacks[attackType]) {
+      if (attack.name === request.input[attackType].name) return;
+    }
+    data.attacks[attackType].push(request.input[attackType]);
+    return data.attacks;
+  },
+  modifyAttack: (request) => {
+    for (const type in data.attacks) {
+      for (const attack of data.attacks[type]) {
+        if (attack.name === request.name) {
+          Object.assign(attack, request.input);
+        }
+      }
+    }
+    return data.attacks;
+  },
+
+  deleteAttack: (request) => {
+    for (const type in data.attacks) {
+      for (const attack of data.attacks[type]) {
+        if (attack.name === request.name) {
+          const index = data.attacks[type].indexOf(attack);
+          data.attacks[type].splice(index, 1);
+        }
+      }
+    }
+    return data.attacks;
   },
 };
 
